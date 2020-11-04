@@ -149,7 +149,7 @@ class Fabrication():
 
         else:
             pick_up_plane = self.rhino_to_robot_space(
-            rg.Plane(rg.Point3d(0, 450, 0), rg.Vector3d.XAxis, rg.Vector3d.YAxis))
+                rg.Plane(rg.Point3d(0, 450, 0), rg.Vector3d.XAxis, rg.Vector3d.YAxis))
             robot_planes = self.brick_planes
 
             for plane in (robot_planes):
@@ -197,7 +197,6 @@ class Brick(object):
         self.length = length
         self.width = width
         self.height = height
-
 
     def dimensions(self):
         """returns the dimenesnions of the brick:
@@ -359,7 +358,6 @@ class Wall():
 
         self.x_cnt = x_cnt
         self.z_cnt = z_cnt
-
 
         self.b_length = Brick.REFERENCE_LENGTH
         self.b_width = Brick.REFERENCE_WIDTH
