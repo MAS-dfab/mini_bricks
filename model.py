@@ -104,7 +104,7 @@ class Fabrication():
         self.script += ur.move_l(pick_up_plane, self.accel, self.vel)
         self.way_planes.append(pick_up_plane)
 
-        self.script += ur.set_digital_out(4, True)
+        self.script += ur.set_digital_out(0, True)
         self.script += ur.sleep(1)
 
         self.script += ur.move_l(safe_plane, self.accel, self.vel)
