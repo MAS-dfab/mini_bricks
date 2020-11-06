@@ -199,6 +199,7 @@ class Area():
         self.layer = layer
         self.area_index = area_index
         self.area_key = "L{}A{}".format(layer, area_index)
+        self.sub_layer_neighbors = []
         self.n_bricks = n_bricks
 
 
