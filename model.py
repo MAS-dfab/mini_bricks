@@ -417,7 +417,7 @@ class Area():
     def get_bricks_vertices(self):
         vertices = []
         for brick in self.area_bricks:
-            vertices.append(brick.pts_before_clustering())
+            vertices.extend(brick.pts_before_clustering())
         return vertices
 
     def find_points_in_extend(self, point_list):
