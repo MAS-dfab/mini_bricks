@@ -201,6 +201,7 @@ class Area():
         self.area_key = "L{}A{}".format(layer, area_index)
         self.sub_layer_neighbors = []
         self.n_bricks = n_bricks
+        self.area_bricks = []
 
 
     def centerline(self, start=False, end=False):
@@ -412,6 +413,19 @@ class Area():
             average_planes.append(plane)
 
         return average_planes
+
+    def get_bricks_vertices(self):
+        vertices = []
+        for brick in self.area_bricks:
+            vertices.append(brick.pts_before_clustering())
+        return vertices
+
+    def find_points_in_extend(self, point_list):
+        inside_pts = []
+        for p in point_list:
+            if self.extend_bounding_area().Contains(p) == rg.PointContainment.Inside:
+                inside_pts.append(p)
+        return inside_pts
 
 
 class Brick(object):
