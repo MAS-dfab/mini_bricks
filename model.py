@@ -203,7 +203,6 @@ class Area():
         self.n_bricks = n_bricks
         self.area_bricks = []
 
-
     def centerline(self, start=False, end=False):
         """get centerline of the area
 
@@ -427,6 +426,60 @@ class Area():
                 inside_pts.append(p)
         return inside_pts
 
+    def num_brick(self, area):
+        """this function calculates the number of bricks per area
+
+        Parameters
+        ----------
+        area : Rhino Geometry polycurve
+        this area describes the curve of bbox for each area
+
+        Returns
+        ----------
+        num_bricks : int
+        this describes the number of bricks per area
+
+        """
+        self.area = area
+        #calculate the area of a brick
+        bl = Brick.REFERENCE_LENGTH
+        bw = Brick.REFERENCE_WIDTH
+        ba = bl * bw
+        
+        #calculate the are of a bounding_area
+        b_mass_pro = rg.AreaMassProperties.Compute( self.area )
+        if b_mass_pro == None:
+            num_brick = 0
+            pass
+        else:
+            b_area = b_mass_pro.Area
+            num_brick = int ( b_area / (ba*1.5) )
+        return num_brick
+
+    def populate_points(self, area, num_brick):
+        """This function create the list of points per area 
+           This should be run ONLY for ground plane
+
+        Parameters
+        ----------
+        area      : Rhino Geometry polycurve
+                     this area describes the curve of bbox for each area
+        num_brick : Rhino Geometry polycurve
+                     this area describes the curve of bbox for each area
+
+        Returns
+        ----------
+        pts       : RhinoGeometry Point3d
+                     this describes the points per area 
+
+        """
+        self.area = area
+        self.num_brick = num_brick
+        pts = ghc.Populate2D(region=self.area, count=self.num_brick, seed=random.randint(0,100))
+        if pts == None:
+            pass
+        else:
+            return pts
 
 class Brick(object):
     REFERENCE_LENGTH = 25.0
