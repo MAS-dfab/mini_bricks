@@ -3,6 +3,7 @@ import rhinoscriptsyntax as rs
 import math as m
 import ghpythonlib.components as ghc
 import random
+from itertools import combinations
 
 import simple_comm as c
 import simple_ur_script as ur
@@ -181,9 +182,15 @@ class Fabrication():
         #c.send_script(self.script, self.robot_ip)
         return self.script
 
+"""Define global Area list and dictionary
+"""
+areas_dict = {}
+areas_list = []
+
+
 class Area():
 
-    def __init__(self, initial_curve, start_param, end_param, layer, area_index, width=100, n_bricks=4):
+    def __init__(self, initial_curve, start_param, end_param, layer, area_index, width=100):
         """Area describes the bounding rectangle in which bricks are placed
 
         Parameters
@@ -200,7 +207,7 @@ class Area():
         self.area_index = area_index
         self.area_key = "L{}A{}".format(layer, area_index)
         self.sub_layer_neighbors = []
-        self.n_bricks = n_bricks
+        self.prev_neighbor = self.get_previous_neighbor(self.layer, self.area_index)
         self.area_bricks = []
 
     def centerline(self, start=False, end=False):
@@ -296,6 +303,12 @@ class Area():
             return self.layer - 1
         else:
             return None
+
+    def get_previous_neighbor(self, layer, index):
+        if index == 0:
+            return None
+        else:
+            return "L{}A{}".format(layer, index-1)
 
     def tangent_origin(self):
         """returns the tangent at the origin plane of the area:
@@ -481,6 +494,44 @@ class Area():
         else:
             return pts
 
+    def check_intersecting_bricks(self):
+        """Checks if bricks in area are intersecting with each other or with bricks from previous area
+
+        Returns
+        ----------
+        Boolean     : Boolean 
+                     True if bricks intersect
+        """
+        global areas_dict
+
+        n_intersecting_bricks = 0
+
+        if len(self.area_bricks) == 0:
+            return n_intersecting_bricks, [] #, "there are no bricks in this area"
+        
+        bricks_to_check = self.area_bricks
+
+        if self.prev_neighbor:
+            bricks_neigh = areas_dict[self.prev_neighbor].area_bricks
+            bricks_to_check.extend(bricks_neigh)
+
+        # initiate number of intersections to zero
+        for brick in bricks_to_check:
+            brick.n_intersections = 0
+        
+        intersections = []
+        for pair in combinations(bricks_to_check, 2):
+            if pair[0].brick_intersect_brick(pair[1]) == True:
+                n_intersecting_bricks += 1
+                intersections.append((pair[0], pair[1]))
+                # update brick property with intersection
+                pair[0].n_intersections += 1
+                pair[1].n_intersections += 1
+
+        return n_intersecting_bricks, intersections
+
+
+
 class Brick(object):
     REFERENCE_LENGTH = 25.0
     REFERENCE_WIDTH = 12.0
@@ -499,6 +550,7 @@ class Brick(object):
         self.length = length
         self.width = width
         self.height = height
+        self.n_intersections = 0
 
 
     def dimensions(self):
