@@ -646,6 +646,19 @@ class Brick(object):
 
         return mesh_brick
 
+    def get_bounding_box(self):
+        """get bounding box in XY plane projected on ground surface
+        """
+        return self.mesh().GetBoundingBox(False)
+
+    def brick_intersect_brick(self, other_brick):
+        bbox_a = self.get_bounding_box()
+        bbox_b = other_brick.get_bounding_box()
+        if (bbox_a.Min.X < bbox_b.Max.X) and (bbox_a.Max.X > bbox_b.Min.X) and (bbox_a.Min.Y < bbox_b.Max.Y) and (bbox_a.Max.Y > bbox_b.Min.Y) and (bbox_a.Min.Z < bbox_b.Max.Z) and (bbox_a.Max.Z > bbox_b.Min.Z):
+            return True
+        else:
+            return False
+
 
 class Wall():
     def __init__(self, x_cnt, z_cnt):
