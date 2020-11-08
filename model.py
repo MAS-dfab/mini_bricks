@@ -559,7 +559,7 @@ class Area():
         """this function uses sklearn.cluster.KMeans to cluster the vertices of sub-layer areas
         """
         if len(self.sub_layer_neighbors) == 0:
-            return "could not find any sub-layer points. Current layer is {}".format(self.layer)
+            return "could not find any sub-layer points. Current layer is {}".format(self.layer), [], []
         
         global areas_dict
 
