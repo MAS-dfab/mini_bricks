@@ -356,7 +356,7 @@ class Area():
         curve_collection = rg.Curve.JoinCurves((curve0, curve1, curve2, curve3))
         
         return curve_collection[0]
-    
+
     def floating_edges(self, clustered_pts):
         """Create the delauney triangulation and pick up floating edges:
 
@@ -369,33 +369,33 @@ class Area():
         # empty list for return
         floating_edges = []
         # inputed tree of points
-        pts = self.clustered_pts
+        # pts = self.clustered_pts
         # get the number of path (=branch) of input tree items
-        path_count = ghc.TreeStatistics( pts ) [2]
+        # path_count = ghc.TreeStatistics( pts ) [2]
         # get values to define the range to puck up floating edges
         bl = Brick.REFERENCE_LENGTH
         bw = Brick.REFERENCE_WIDTH
         bd = m.sqrt( (bl/2.0)*(bl/2.0) + bw*bw ) # diagonal edge of brick
         tol = 0.01                               # tolerance of range (if necessary)
+        
+        # pick up one branch (=list of Rhino.Geometry : point3d)
+        # clustered_pt = ghc.TreeBranch( self.clustered_pts, i )
+        # create edges inside the picked up cluster
+        clusterd_edges = ghc.DelaunayEdges( self.clustered_pts )[1]
 
-        for i in range(path_count):
-            # pick up one branch (=list of Rhino.Geometry : point3d)
-            clustered_pt = ghc.TreeBranch( self.clustered_pts, i )
-            # create edges inside the picked up cluster
-            clusterd_edges = ghc.DelaunayEdges( clustered_pt )[1]
-
-            floating_edge = []
-            for edge in clusterd_edges:
-                edge_length = edge.Length
-                if ( ( (bl-tol) < edge_length )  or                         #remove longer edges of the bricks and edges longer than bl
-                     ( (bw-tol) < edge_length < (bw+tol) )  or              #remove shorter edges of the bricks 
-                     ( (bd-tol) < edge_length < (bd+tol) )  or              #remove diagonal edges of the bricks
-                     ( ((bl/2.0)-tol) < edge_length < ((bl/2.0)+tol) ) ):   #remove divided longer edges of the bricks
-                    continue
-                else:
-                    floating_edge.append( edge )
-            floating_edges.append( floating_edge )
+        floating_edge = []
+        for edge in clusterd_edges:
+            edge_length = edge.Length
+            if ( ( (bl-tol) < edge_length )  or                         #remove longer edges of the bricks and edges longer than bl
+                 ( (bw-tol) < edge_length < (bw+tol) )  or              #remove shorter edges of the bricks 
+                 ( (bd-tol) < edge_length < (bd+tol) )  or              #remove diagonal edges of the bricks
+                 ( ((bl/2.0)-tol) < edge_length < ((bl/2.0)+tol) ) ):   #remove divided longer edges of the bricks
+                continue
+            else:
+                floating_edge.append( edge )
+        floating_edges.append( floating_edge )
         return floating_edges
+
     
     def average_planes(self, initial_edges):
         """Create the planes at the center point of average line from input:
