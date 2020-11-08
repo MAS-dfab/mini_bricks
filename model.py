@@ -586,8 +586,6 @@ class Area():
         
         return clusters, points, labels
 
-    def numpy_array(self, data):
-        return np.array(data)
     
     def random_brick_planes(self, points):
         planes = []
