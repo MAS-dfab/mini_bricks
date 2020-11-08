@@ -578,8 +578,8 @@ class Area():
         for i in range(self.initial_number_bricks):
             clusters.append([])
 
-        for i, point in zip(kmeans.labels_, input_data):
-            point = rg.Point3d(point[0], point[1], point[2])
+        for i, point in zip(kmeans.labels_, pts_to_cluster_inside):
+            #point = rg.Point3d(point[0], point[1], point[2])
             clusters[i].append(point)
             points.append(point)
         
