@@ -448,7 +448,7 @@ class Area():
                 inside_pts.append(p)
         return inside_pts
 
-    def num_brick(self, area):
+    def num_brick(self, area, density):
         """this function calculates the number of bricks per area
 
         Parameters
@@ -463,6 +463,8 @@ class Area():
 
         """
         self.area = area
+        self.density = density
+
         #calculate the area of a brick
         bl = Brick.REFERENCE_LENGTH
         bw = Brick.REFERENCE_WIDTH
@@ -475,7 +477,7 @@ class Area():
             pass
         else:
             b_area = b_mass_pro.Area
-            num_brick = int ( b_area / (ba*1.5) )
+            num_brick = int ( (b_area*self.density) / ba )
         self.initial_number_bricks = num_brick
         return num_brick
 
@@ -566,6 +568,22 @@ class Area():
             clusters[i].append(rg.Point3d(point[0], point[1], point[2]))
         
         return clusters
+    
+    def random_brick_planes(self, points):
+        planes = []
+        self.points = points
+        if self.points == None:
+            pass
+        else:
+            for point in self.points:
+                plane = rg.Plane(point, rg.Vector3d.ZAxis)
+                start_vec = rg.Vector3d.XAxis
+                end_vec = rg.Vector3d( random.random(), random.random(), 0)
+                T = rg.Transform.Rotation( start_vec, end_vec, plane.Origin )
+                plane.Transform(T)
+                planes.append(plane)
+        return planes
+
 
 
 
