@@ -516,29 +516,42 @@ class Area():
         """
         global areas_dict
 
+        # initiate count number of intersecting bricks for Area
         n_intersecting_bricks = 0
 
+        # if no bricks in area_bricks then return
         if len(self.area_bricks) == 0:
             return n_intersecting_bricks, [] #, "there are no bricks in this area"
-        
-        bricks_to_check = self.area_bricks
 
-        if self.prev_neighbor:
-            bricks_neigh = areas_dict[self.prev_neighbor].area_bricks
-            bricks_to_check.extend(bricks_neigh)
-
-        # initiate number of intersections to zero
-        for brick in bricks_to_check:
+        # initiate number of intersections to zero for each brick
+        for brick in self.area_bricks:
             brick.n_intersections = 0
         
         intersections = []
-        for pair in combinations(bricks_to_check, 2):
+        # check intersections within the area
+        for pair in combinations(self.area_bricks, 2):
             if pair[0].brick_intersect_brick(pair[1]) == True:
                 n_intersecting_bricks += 1
                 intersections.append((pair[0], pair[1]))
                 # update brick property with intersection
                 pair[0].n_intersections += 1
                 pair[1].n_intersections += 1
+
+        # check intersections with previous Area
+        if self.prev_neighbor:
+            bricks_neigh = areas_dict[self.prev_neighbor].area_bricks
+            # initiate number of intersections to zero for neighboring area bricks
+            for brick in bricks_neigh:
+                brick.n_intersections = 0
+            for b1 in self.area_bricks:
+                for b2 in bricks_neigh:
+                    if b1.brick_intersect_brick(b2) == True:
+                        n_intersecting_bricks += 1
+                        intersections.append((b1, b2))
+                        # update brick property with intersection
+                        b1.n_intersections += 1
+                        b2.n_intersections += 1
+
 
         return n_intersecting_bricks, intersections
 
@@ -555,19 +568,26 @@ class Area():
             pts_to_cluster_all.extend(areas_dict[area].get_bricks_vertices())
         
         pts_to_cluster_inside = self.find_points_in_extend(pts_to_cluster_all)
-        input_data = [ [float(p.X), float(p.Y), float(p.Z)] for p in pts_to_cluster_inside ]
-        input_data = np.array(input_data)
+        input_data = [ [p.X, p.Y, p.Z] for p in pts_to_cluster_inside ]
+        input_data = np.array(input_data, dtype=np.float16)
 
-        kmeans = sklearn.cluster.KMeans(n_clusters=self.initial_number_bricks, n_init=10, max_iter=300).fit(input_data)
+        kmeans = sklearn.cluster.KMeans(n_clusters=self.initial_number_bricks, n_init=3, max_iter=50).fit(input_data)
 
         clusters = []
+        points = []
+        labels = kmeans.labels_.tolist()
         for i in range(self.initial_number_bricks):
             clusters.append([])
 
         for i, point in zip(kmeans.labels_, input_data):
-            clusters[i].append(rg.Point3d(point[0], point[1], point[2]))
+            point = rg.Point3d(point[0], point[1], point[2])
+            clusters[i].append(point)
+            points.append(point)
         
-        return clusters
+        return clusters, points, labels
+
+    def numpy_array(self, data):
+        return np.array(data)
     
     def random_brick_planes(self, points):
         planes = []
