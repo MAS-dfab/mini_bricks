@@ -365,7 +365,6 @@ class Area():
         [Rhino Geometry Line Collection]
 
         """
-        self.clustered_pts = clustered_pts
         # empty list for return
         floating_edges = []
         # inputed tree of points
@@ -381,7 +380,7 @@ class Area():
         # pick up one branch (=list of Rhino.Geometry : point3d)
         # clustered_pt = ghc.TreeBranch( self.clustered_pts, i )
         # create edges inside the picked up cluster
-        clusterd_edges = ghc.DelaunayEdges( self.clustered_pts )[1]
+        clusterd_edges = ghc.DelaunayEdges( clustered_pts )[1]
 
         floating_edge = []
         for edge in clusterd_edges:
