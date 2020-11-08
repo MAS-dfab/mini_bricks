@@ -8,6 +8,14 @@ from itertools import combinations
 import simple_comm as c
 import simple_ur_script as ur
 
+import scriptcontext as sc
+import ghpythonremote
+import Rhino.Geometry as rg
+np = sc.sticky['numpy']
+rpy = sc.sticky['rpy']
+sklearn = sc.sticky['sklearn']
+sklearn.cluster = sc.sticky['sklearn.cluster']
+
 
 class Fabrication():
     ROBOT_IP = "192.168.10.10"
@@ -208,6 +216,7 @@ class Area():
         self.area_key = "L{}A{}".format(layer, area_index)
         self.sub_layer_neighbors = []
         self.prev_neighbor = self.get_previous_neighbor(self.layer, self.area_index)
+        self.initial_number_bricks = 0
         self.area_bricks = []
 
     def centerline(self, start=False, end=False):
@@ -467,6 +476,7 @@ class Area():
         else:
             b_area = b_mass_pro.Area
             num_brick = int ( b_area / (ba*1.5) )
+        self.initial_number_bricks = num_brick
         return num_brick
 
     def populate_points(self, area, num_brick):
@@ -529,6 +539,33 @@ class Area():
                 pair[1].n_intersections += 1
 
         return n_intersecting_bricks, intersections
+
+    def cluster_sub_layer_points(self):
+        """this function uses sklearn.cluster.KMeans to cluster the vertices of sub-layer areas
+        """
+        if len(self.sub_layer_neighbors) == 0:
+            return "could not find any sub-layer points. Current layer is {}".format(self.layer)
+        
+        global areas_dict
+
+        pts_to_cluster_all = []
+        for area in self.sub_layer_neighbors:
+            pts_to_cluster_all.extend(areas_dict[area].get_bricks_vertices())
+        
+        pts_to_cluster_inside = self.find_points_in_extend(pts_to_cluster_all)
+        input_data = [ [float(p.X), float(p.Y), float(p.Z)] for p in pts_to_cluster_inside ]
+        input_data = np.array(input_data)
+
+        kmeans = sklearn.cluster.KMeans(n_clusters=self.initial_number_bricks, n_init=10, max_iter=300).fit(input_data)
+
+        clusters = []
+        for i in range(self.initial_number_bricks):
+            clusters.append([])
+
+        for i, point in zip(kmeans.labels_, input_data):
+            clusters[i].append(rg.Point3d(point[0], point[1], point[2]))
+        
+        return clusters
 
 
 
