@@ -637,7 +637,7 @@ class Area():
         convex_hulls = []
         center_pts = []
         if self.layer == 0:
-            return floating_bricks
+            return floating_bricks, convex_hulls, center_pts
         
         # first find the intersecting bricks from the bottom layer to check with
         all_sub_layer_bricks = []
