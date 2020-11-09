@@ -218,6 +218,7 @@ class Area():
         self.prev_neighbor = self.get_previous_neighbor(self.layer, self.area_index)
         self.initial_number_bricks = 0
         self.area_bricks = []
+        self.RTree = None
 
     def centerline(self, start=False, end=False):
         """get centerline of the area
@@ -255,7 +256,7 @@ class Area():
         """
         return rg.Curve.PointAt(self.initial_curve, self.end_param)
 
-    def extend_bounding_area(self):
+    def extend_bounding_area(self, both_sides=False):
         """Extend the bounding area both sides of the area along the initial curve
 
         Parameters
@@ -279,14 +280,18 @@ class Area():
         else:
             _ , new_start_param = self.initial_curve.LengthParameter(len_offset)
         
-        # extend end parameter
-        len = self.initial_curve.GetLength(rg.Interval(self.initial_curve.Domain[0], self.end_param))
-        len_offset = len + offset 
-        if len_offset >= len_curve:
-            new_end_param = self.initial_curve.Domain[1]
-        else:
-            _ , new_end_param = self.initial_curve.LengthParameter(len_offset)
+        new_end_param = self.end_param
 
+        if both_sides is True:
+            # extend end parameter
+            len = self.initial_curve.GetLength(rg.Interval(self.initial_curve.Domain[0], self.end_param))
+            len_offset = len + offset 
+            if len_offset >= len_curve:
+                new_end_param = self.initial_curve.Domain[1]
+            else:
+                _ , new_end_param = self.initial_curve.LengthParameter(len_offset)
+
+        
         # create offset from centerline
         curve0 = self.centerline(start=new_start_param, end=new_end_param).Offset(rg.Plane.WorldXY, self.width/2, 0.001, 0)
         curve0 = curve0[0]
@@ -526,6 +531,12 @@ class Area():
         else:
             return pts
 
+    def create_R_tree_from_bricks(self, brickObjs):
+        brick_origins = [ b.origin().Origin for b in brickObjs ]
+        tree = rg.RTree.CreateFromPointArray(brick_origins)
+        self.RTree = tree
+        
+
     def check_intersecting_bricks(self):
         """Checks if bricks in area are intersecting with each other or with bricks from previous area
 
@@ -546,11 +557,11 @@ class Area():
         # initiate number of intersections to zero for each brick
         for brick in self.area_bricks:
             brick.n_intersections = 0
-        
+
         intersections = []
         # check intersections within the area
         for pair in combinations(self.area_bricks, 2):
-            if pair[0].brick_intersect_brick(pair[1]) == True:
+            if pair[0].brick_intersect_brick(pair[1]) is True:
                 n_intersecting_bricks += 1
                 intersections.append((pair[0], pair[1]))
                 # update brick property with intersection
@@ -560,6 +571,7 @@ class Area():
         # check intersections with previous Area
         if self.prev_neighbor:
             bricks_neigh = areas_dict[self.prev_neighbor].area_bricks
+            # check if brick is inside extend area
             # initiate number of intersections to zero for neighboring area bricks
             for brick in bricks_neigh:
                 brick.n_intersections = 0
@@ -849,11 +861,32 @@ class Brick(object):
         """
         return self.mesh().GetBoundingBox(False)
 
+    def move_brick_pts(self, pts):
+
+        tran_brick_pts = []
+
+        for pt in  pts:
+            transformation_pt = pt.Clone() #duplicate function for point (for plane, duplicate)
+            transformation_pt.Transform(self.transformation())
+            tran_brick_pts.append(transformation_pt)      
+
+        return tran_brick_pts
+
     def brick_intersect_brick(self, other_brick):
-        bbox_a = self.get_bounding_box()
-        bbox_b = other_brick.get_bounding_box()
-        if (bbox_a.Min.X < bbox_b.Max.X) and (bbox_a.Max.X > bbox_b.Min.X) and (bbox_a.Min.Y < bbox_b.Max.Y) and (bbox_a.Max.Y > bbox_b.Min.Y) and (bbox_a.Min.Z < bbox_b.Max.Z) and (bbox_a.Max.Z > bbox_b.Min.Z):
-            return True
+        corner_pts_a = self.move_brick_pts(self.pts()[:4])
+        corner_pts_b = other_brick.move_brick_pts(other_brick.pts()[:4])
+        bbox_a = rg.BoundingBox(corner_pts_a)
+        bbox_b = rg.BoundingBox(corner_pts_b)
+        if (bbox_a.Min.X < bbox_b.Max.X) and (bbox_a.Max.X > bbox_b.Min.X) and (bbox_a.Min.Y < bbox_b.Max.Y) and (bbox_a.Max.Y > bbox_b.Min.Y): #and (bbox_a.Min.Z < bbox_b.Max.Z) and (bbox_a.Max.Z > bbox_b.Min.Z):
+            poly_a = rg.PolyCurve()
+            poly_a.Append(rg.Line(corner_pts_a[0], corner_pts_a[1]))
+            poly_a.Append(rg.Line(corner_pts_a[1], corner_pts_a[2]))
+            poly_a.Append(rg.Line(corner_pts_a[2], corner_pts_a[3]))
+            poly_a.Append(rg.Line(corner_pts_a[3], corner_pts_a[0]))
+            for p in corner_pts_b:
+                if poly_a.Contains(p) == rg.PointContainment.Inside:
+                    return True
+            return False
         else:
             return False
 
