@@ -877,14 +877,15 @@ class Brick(object):
         corner_pts_b = other_brick.move_brick_pts(other_brick.pts()[:4])
         bbox_a = rg.BoundingBox(corner_pts_a)
         bbox_b = rg.BoundingBox(corner_pts_b)
-        if (bbox_a.Min.X < bbox_b.Max.X) and (bbox_a.Max.X > bbox_b.Min.X) and (bbox_a.Min.Y < bbox_b.Max.Y) and (bbox_a.Max.Y > bbox_b.Min.Y): #and (bbox_a.Min.Z < bbox_b.Max.Z) and (bbox_a.Max.Z > bbox_b.Min.Z):
+        if (bbox_a.Min.X <= bbox_b.Max.X) and (bbox_a.Max.X >= bbox_b.Min.X) and (bbox_a.Min.Y <= bbox_b.Max.Y) and (bbox_a.Max.Y >= bbox_b.Min.Y): #and (bbox_a.Min.Z < bbox_b.Max.Z) and (bbox_a.Max.Z > bbox_b.Min.Z):
             poly_a = rg.PolyCurve()
             poly_a.Append(rg.Line(corner_pts_a[0], corner_pts_a[1]))
             poly_a.Append(rg.Line(corner_pts_a[1], corner_pts_a[2]))
             poly_a.Append(rg.Line(corner_pts_a[2], corner_pts_a[3]))
             poly_a.Append(rg.Line(corner_pts_a[3], corner_pts_a[0]))
             for p in corner_pts_b:
-                if poly_a.Contains(p) == rg.PointContainment.Inside:
+                containment = poly_a.Contains(p)
+                if containment == rg.PointContainment.Inside or containment == rg.PointContainment.Coincident:
                     return True
             return False
         else:
