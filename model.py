@@ -925,8 +925,11 @@ class Brick(object):
         intersection_vertices = []
         for b in sub_layer_breps:
             intersection_area = rs.IntersectBreps(brep_top, b, tolerance = None)
-            vertices = rs.PolylineVertices(intersection_area[0])
-            intersection_vertices.extend(vertices)
+            try:
+                vertices = rs.PolylineVertices(intersection_area[0])
+                intersection_vertices.extend(vertices)
+            except:
+                continue
 
         if len(intersection_vertices) < 3:
             self.floating = True
