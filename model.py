@@ -365,24 +365,16 @@ class Area():
         [Rhino Geometry Line Collection]
 
         """
-        # empty list for return
         floating_edges = []
-        # inputed tree of points
-        # pts = self.clustered_pts
-        # get the number of path (=branch) of input tree items
-        # path_count = ghc.TreeStatistics( pts ) [2]
-        # get values to define the range to puck up floating edges
+
         bl = Brick.REFERENCE_LENGTH
         bw = Brick.REFERENCE_WIDTH
         bd = m.sqrt( (bl/2.0)*(bl/2.0) + bw*bw ) # diagonal edge of brick
         tol = 0.01                               # tolerance of range (if necessary)
         
-        # pick up one branch (=list of Rhino.Geometry : point3d)
-        # clustered_pt = ghc.TreeBranch( self.clustered_pts, i )
         # create edges inside the picked up cluster
         clusterd_edges = ghc.DelaunayEdges( clustered_pts )[1]
 
-        floating_edge = []
         for edge in clusterd_edges:
             edge_length = edge.Length
             if ( ( (bl-tol) < edge_length )  or                         #remove longer edges of the bricks and edges longer than bl
@@ -391,48 +383,77 @@ class Area():
                  ( ((bl/2.0)-tol) < edge_length < ((bl/2.0)+tol) ) ):   #remove divided longer edges of the bricks
                 continue
             else:
-                floating_edge.append( edge )
-        floating_edges.append( floating_edge )
+                floating_edges.append( edge )
         return floating_edges
 
-    
-    def average_planes(self, initial_edges):
-        """Create the planes at the center point of average line from input:
-        Input
-        ----------
-        [Rhino Geometry Line Collection]
 
-        Returns
-        ----------
-        [Rhino Geometry Plane Collection] 
-
-        """
-        self.initial_edges = initial_edges
-
-        average_crvs = []
-        average_vecs = []
-
-        for initial_edge in self.initial_edges:
-            #create average crv
-            average_crv = ghc.Pufferfish.AverageCurve( initial_edge, 0, 0 )
-            #get direction of average crv
-            start_vec = rg.Vector3d( average_crv.PointAtStart )
-            end_vec   = rg.Vector3d( average_crv.PointAtEnd )
-            average_vec = end_vec - start_vec
-
-            average_crvs.append( average_crv )
-            average_vecs.append( average_vec )
+    def average_planes(self, lines):
+        s_x = 0
+        s_y = 0
+        s_z = 0
         
-        #create planes
-        average_planes = []
-        for crv, vec in zip( average_crvs, average_vecs ):
-            center = crv.PointAt(0.5)
-            plane = rg.Plane(center, rg.Vector3d.ZAxis)
-            T = rg.Transform.Rotation( rg.Vector3d.XAxis, vec, center )
-            plane.Transform(T)
-            average_planes.append(plane)
+        e_x = 0
+        e_y = 0
+        e_z = 0
+        
+        l = len(lines)
+        if l == 0 :
+            pass
 
-        return average_planes
+        else:
+            for line in lines:
+                startPt = line.PointAt(0.0)
+                endPt = line.PointAt(1.0)
+                midPt = line.PointAt(0.5)
+                
+                startPt_2 = line.PointAt(0.0)
+                endPt_2 = line.PointAt(1.0)
+                
+                s_x += startPt.X
+                s_y += startPt.Y
+                s_z += startPt.Z
+                
+                e_x += endPt.X
+                e_y += endPt.Y
+                e_z += endPt.Z
+                
+            
+            
+            sx = s_x/l
+            sy = s_y/l
+            sz = s_z/l
+            
+            ex = e_x/l
+            ey = e_y/l
+            ez = e_z/l
+            
+            a = rg.Point3d(sx, sy, sz)
+            b = rg.Point3d(ex, ey, ez)
+            
+            
+            
+            aV = rg.Vector3d(a)
+            bV = rg.Vector3d(b)
+            c = rg.Vector3d(bV-aV)
+            
+            ave_l = rg.Line(a, b)
+            midP = ave_l.PointAt(0.5)
+            
+            ave_l2 = rg.Line(a, b)
+            T = rg.Transform.Rotation(rg.Vector3d.XAxis, rg.Vector3d.YAxis, midPt)
+            ave_l2.Transform(T)
+            aV2 = rg.Vector3d( rg.Line.PointAt(ave_l2, 0.5) )
+            bV2 = rg.Vector3d( rg.Line.PointAt(ave_l2, 1.0) )
+            c2 = rg.Vector3d(bV2 - aV2)
+            
+            midP2 = rg.Point3d(midP.X, midP.Y, midP.Z+1)
+            
+            sa = rg.Vector3d(midP)
+            ea = rg.Vector3d(midP2)
+            axis = ea - sa
+            
+            ave_plane = rg.Plane(midP, c, c2)
+            return ave_plane
 
     def get_bricks_vertices(self):
         vertices = []
