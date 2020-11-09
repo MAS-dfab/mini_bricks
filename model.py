@@ -648,7 +648,7 @@ class Area():
         for brick_top in self.area_bricks:
             supporting_bricks = []
             for brick_bottom in all_sub_layer_bricks:
-                if brick_top.brick_intersect_brick(brick_bottom) == True:
+                if brick_top.brick_intersect_brick(brick_bottom, sub_layer=True) == True:
                     supporting_bricks.append(brick_bottom)
             
             # when we know the supporting bricks from the bottom layer for each brick of the top layer we can check if its floating
@@ -898,9 +898,15 @@ class Brick(object):
 
         return tran_brick_pts
 
-    def brick_intersect_brick(self, other_brick):
+    def brick_intersect_brick(self, other_brick, sub_layer=False):
         corner_pts_a = self.move_brick_pts(self.pts()[:4])
-        corner_pts_b = other_brick.move_brick_pts(other_brick.pts()[:4])
+        if sub_layer == True:
+        # Get top layer corner points
+            corner_pts_b = other_brick.move_brick_pts(other_brick.pts()[4:])
+        else:
+        # Get base layer corner points
+            corner_pts_b = other_brick.move_brick_pts(other_brick.pts()[4:])
+
         bbox_a = rg.BoundingBox(corner_pts_a)
         bbox_b = rg.BoundingBox(corner_pts_b)
         if ((bbox_a.Min.X <= bbox_b.Max.X) and
@@ -908,7 +914,6 @@ class Brick(object):
             (bbox_a.Min.Y <= bbox_b.Max.Y) and 
             (bbox_a.Max.Y >= bbox_b.Min.Y)): #and (bbox_a.Min.Z < bbox_b.Max.Z) and (bbox_a.Max.Z > bbox_b.Min.Z):
 
-            print("a_min_X: {}, b_max_X: {}, a_max_X: {}, b_min_X: {}, a_min_Y: {}, b_max_Y: {}, a_max_Y: {}, b_min_Y: {}".format(bbox_a.Min.X, bbox_b.Max.X, bbox_a.Max.X, bbox_b.Min.X, bbox_a.Min.Y, bbox_b.Max.Y, bbox_a.Max.Y, bbox_b.Min.Y))
             poly_a = rg.PolyCurve()
             poly_a.Append(rg.Line(corner_pts_a[0], corner_pts_a[1]))
             poly_a.Append(rg.Line(corner_pts_a[1], corner_pts_a[2]))
