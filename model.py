@@ -634,6 +634,9 @@ class Area():
         """
         global areas_dict
         floating_bricks = []
+        if self.layer == 0:
+            return floating_bricks
+        
         # first find the intersecting bricks from the bottom layer to check with
         all_sub_layer_bricks = []
         for area_key in self.sub_layer_neighbors:
