@@ -944,7 +944,7 @@ class Brick(object):
             self.floating = True
             return True, convex_hull, self.base_plane().Origin
         else:
-            return False, self.base_plane().Origin
+            return False, convex_hull, self.base_plane().Origin
 
 
 class Wall():
