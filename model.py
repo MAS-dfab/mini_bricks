@@ -634,6 +634,8 @@ class Area():
         """
         global areas_dict
         floating_bricks = []
+        convex_hulls = []
+        center_pts = []
         if self.layer == 0:
             return floating_bricks
         
@@ -646,14 +648,17 @@ class Area():
         for brick_top in self.area_bricks:
             supporting_bricks = []
             for brick_bottom in all_sub_layer_bricks:
-                if brick_top.brick_intersect_brick(brick_bottom) is True:
+                if brick_top.brick_intersect_brick(brick_bottom) == True:
                     supporting_bricks.append(brick_bottom)
             
             # when we know the supporting bricks from the bottom layer for each brick of the top layer we can check if its floating
-            if brick_top.check_floating_brick(supporting_bricks) is True:
+            boolean, center, convex_hull = brick_top.check_floating_brick(supporting_bricks)
+            if boolean == True:
                 floating_bricks.append(brick_top)
+                convex_hulls.append(convex_hull)
+                center_pts.append(center)
         
-        return floating_bricks
+        return floating_bricks, convex_hulls, center_pts
 
 
 class Brick(object):
@@ -933,13 +938,13 @@ class Brick(object):
 
         if len(intersection_vertices) < 3:
             self.floating = True
-            return True
+            return True, None, self.base_plane().Origin
         convex_hull = ghc.ConvexHull(intersection_vertices)[0]
         if convex_hull.Contains(self.base_plane().Origin) == rg.PointContainment.Outside:
             self.floating = True
-            return True
+            return True, convex_hull, self.base_plane().Origin
         else:
-            return False
+            return False, self.base_plane().Origin
 
 
 class Wall():
