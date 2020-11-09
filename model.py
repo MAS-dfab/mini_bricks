@@ -255,7 +255,7 @@ class Area():
         """
         return rg.Curve.PointAt(self.initial_curve, self.end_param)
 
-    def extend_bounding_area(self):
+    def extend_bounding_area(self, both_sides=False):
         """Extend the bounding area both sides of the area along the initial curve
 
         Parameters
@@ -279,14 +279,18 @@ class Area():
         else:
             _ , new_start_param = self.initial_curve.LengthParameter(len_offset)
         
-        # extend end parameter
-        len = self.initial_curve.GetLength(rg.Interval(self.initial_curve.Domain[0], self.end_param))
-        len_offset = len + offset 
-        if len_offset >= len_curve:
-            new_end_param = self.initial_curve.Domain[1]
-        else:
-            _ , new_end_param = self.initial_curve.LengthParameter(len_offset)
+        new_end_param = self.end_param
 
+        if both_sides is True:
+            # extend end parameter
+            len = self.initial_curve.GetLength(rg.Interval(self.initial_curve.Domain[0], self.end_param))
+            len_offset = len + offset 
+            if len_offset >= len_curve:
+                new_end_param = self.initial_curve.Domain[1]
+            else:
+                _ , new_end_param = self.initial_curve.LengthParameter(len_offset)
+
+        
         # create offset from centerline
         curve0 = self.centerline(start=new_start_param, end=new_end_param).Offset(rg.Plane.WorldXY, self.width/2, 0.001, 0)
         curve0 = curve0[0]
