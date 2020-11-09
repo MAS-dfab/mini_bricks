@@ -341,7 +341,7 @@ class Area():
 
         return plane
 
-    def bounding_area(self):
+    def bounding_area(self, division_factor):
         """Create the bounding area:
 
         Returns
@@ -350,10 +350,10 @@ class Area():
 
         """
         # create offset from centerline
-        curve0 = self.centerline().Offset(rg.Plane.WorldXY, self.width/2, 0.001, 0)
+        curve0 = self.centerline().Offset(rg.Plane.WorldXY, self.width/division_factor, 0.001, 0)
         curve0 = curve0[0]
         # offset other direction
-        curve1 = self.centerline().Offset(rg.Plane.WorldXY, self.width/2*-1, 0.001, 0)
+        curve1 = self.centerline().Offset(rg.Plane.WorldXY, (self.width/division_factor)*-1, 0.001, 0)
         curve1 = curve1[0]
         # use start and end points of offset line to connect and create bounding area
         curve2 = rg.LineCurve( curve0.PointAtStart, curve1.PointAtStart )
@@ -381,6 +381,7 @@ class Area():
         clusterd_edges = ghc.DelaunayEdges( clustered_pts )[1]
 
         for edge in clusterd_edges:
+            print(edge)
             edge_length = edge.Length
             if ( ( (bl-tol) < edge_length )  or                         #remove longer edges of the bricks and edges longer than bl
                  ( (bw-tol) < edge_length < (bw+tol) )  or              #remove shorter edges of the bricks 
