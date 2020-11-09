@@ -681,6 +681,7 @@ class Brick(object):
         self.height = height
         self.n_intersections = 0
         self.floating = False
+        self.supporting_bricks = []
 
 
     def dimensions(self):
@@ -921,6 +922,7 @@ class Brick(object):
         # create brep from bottom layer of brick for top brick (self)
         corner_pts_a = self.move_brick_pts(self.pts()[:4])
         brep_top = rg.Brep.CreateFromCornerPoints(corner_pts_a[0], corner_pts_a[1], corner_pts_a[2], corner_pts_a[3], 0.05)
+        self.supporting_bricks = sub_layer_bricks
         # create breps of top layer of sub-layer bricks
         sub_layer_breps = []
         for brick in sub_layer_bricks:
