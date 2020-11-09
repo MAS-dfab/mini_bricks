@@ -903,17 +903,34 @@ class Brick(object):
         corner_pts_b = other_brick.move_brick_pts(other_brick.pts()[:4])
         bbox_a = rg.BoundingBox(corner_pts_a)
         bbox_b = rg.BoundingBox(corner_pts_b)
-        if (bbox_a.Min.X <= bbox_b.Max.X) and (bbox_a.Max.X >= bbox_b.Min.X) and (bbox_a.Min.Y <= bbox_b.Max.Y) and (bbox_a.Max.Y >= bbox_b.Min.Y): #and (bbox_a.Min.Z < bbox_b.Max.Z) and (bbox_a.Max.Z > bbox_b.Min.Z):
+        if ((bbox_a.Min.X <= bbox_b.Max.X) and
+            (bbox_a.Max.X >= bbox_b.Min.X) and 
+            (bbox_a.Min.Y <= bbox_b.Max.Y) and 
+            (bbox_a.Max.Y >= bbox_b.Min.Y)): #and (bbox_a.Min.Z < bbox_b.Max.Z) and (bbox_a.Max.Z > bbox_b.Min.Z):
+
+            print("a_min_X: {}, b_max_X: {}, a_max_X: {}, b_min_X: {}, a_min_Y: {}, b_max_Y: {}, a_max_Y: {}, b_min_Y: {}".format(bbox_a.Min.X, bbox_b.Max.X, bbox_a.Max.X, bbox_b.Min.X, bbox_a.Min.Y, bbox_b.Max.Y, bbox_a.Max.Y, bbox_b.Min.Y))
             poly_a = rg.PolyCurve()
             poly_a.Append(rg.Line(corner_pts_a[0], corner_pts_a[1]))
             poly_a.Append(rg.Line(corner_pts_a[1], corner_pts_a[2]))
             poly_a.Append(rg.Line(corner_pts_a[2], corner_pts_a[3]))
             poly_a.Append(rg.Line(corner_pts_a[3], corner_pts_a[0]))
-            for p in corner_pts_b:
-                containment = poly_a.Contains(p)
-                if containment == rg.PointContainment.Inside or containment == rg.PointContainment.Coincident:
-                    return True
-            return False
+
+            poly_b = rg.PolyCurve()
+            poly_b.Append(rg.Line(corner_pts_b[0], corner_pts_b[1]))
+            poly_b.Append(rg.Line(corner_pts_b[1], corner_pts_b[2]))
+            poly_b.Append(rg.Line(corner_pts_b[2], corner_pts_b[3]))
+            poly_b.Append(rg.Line(corner_pts_b[3], corner_pts_b[0]))
+
+            # CI = rg.Intersect.Intersection.CurveCurve(poly_a, poly_b, 0.01, 0.01)
+            # print(type( CI.Count) )
+            
+            # if CI.Count > 0:
+            cbi = rs.CurveBooleanIntersection(poly_a, poly_b, tolerance=None)
+
+            if len(cbi) > 0:
+                return True
+            else:
+                return False
         else:
             return False
 
