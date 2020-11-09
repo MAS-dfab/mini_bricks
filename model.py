@@ -929,7 +929,7 @@ class Brick(object):
             intersection_vertices.extend(vertices)
 
         convex_hull = ghc.ConvexHull(intersection_vertices)[0]
-        if convex_hull.Contains(self.base_plane().Origin) == rg.PointContainment.Inside:
+        if convex_hull.Contains(self.base_plane().Origin) == rg.PointContainment.Outside:
             self.floating = True
             return True
         else:
