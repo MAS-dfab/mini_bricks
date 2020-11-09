@@ -928,6 +928,9 @@ class Brick(object):
             vertices = rs.PolylineVertices(intersection_area[0])
             intersection_vertices.extend(vertices)
 
+        if len(intersection_vertices) < 3:
+            self.floating = True
+            return True
         convex_hull = ghc.ConvexHull(intersection_vertices)[0]
         if convex_hull.Contains(self.base_plane().Origin) == rg.PointContainment.Outside:
             self.floating = True
