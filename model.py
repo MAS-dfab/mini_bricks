@@ -652,7 +652,7 @@ class Area():
                     supporting_bricks.append(brick_bottom)
             
             # when we know the supporting bricks from the bottom layer for each brick of the top layer we can check if its floating
-            boolean, center, convex_hull = brick_top.check_floating_brick(supporting_bricks)
+            boolean, convex_hull, center = brick_top.check_floating_brick(supporting_bricks)
             if boolean == True:
                 floating_bricks.append(brick_top)
                 convex_hulls.append(convex_hull)
