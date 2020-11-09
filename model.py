@@ -631,7 +631,28 @@ class Area():
                 planes.append(plane)
         return planes
 
-
+    def find_floating_bricks(self):
+        """This function will check for every brick inside the area if its floating
+        """
+        global areas_dict
+        floating_bricks = []
+        # first find the intersecting bricks from the bottom layer to check with
+        all_sub_layer_bricks = []
+        for area_key in self.sub_layer_neighbors:
+            all_sub_layer_bricks.extend(areas_dict[area_key].area_bricks)
+        
+        # check bounding box intersections to find the supporting bricks
+        for brick_top in self.area_bricks:
+            supporting_bricks = []
+            for brick_bottom in all_sub_layer_bricks:
+                if brick_top.brick_intersect_brick(brick_bottom) is True:
+                    supporting_bricks.append(brick_bottom)
+            
+            # when we know the supporting bricks from the bottom layer for each brick of the top layer we can check if its floating
+            if brick_top.check_floating_brick(supporting_bricks) is True:
+                floating_bricks.append(brick_top)
+        
+        return floating_bricks
 
 
 class Brick(object):
@@ -653,6 +674,7 @@ class Brick(object):
         self.width = width
         self.height = height
         self.n_intersections = 0
+        self.floating = False
 
 
     def dimensions(self):
@@ -885,6 +907,30 @@ class Brick(object):
                 if containment == rg.PointContainment.Inside or containment == rg.PointContainment.Coincident:
                     return True
             return False
+        else:
+            return False
+
+    def check_floating_brick(self, sub_layer_bricks):
+        # create flat breps from bricks
+        # create brep from bottom layer of brick for top brick (self)
+        corner_pts_a = self.move_brick_pts(self.pts()[:4])
+        brep_top = rg.Brep.CreateFromCornerPoints(corner_pts_a[0], corner_pts_a[1], corner_pts_a[2], corner_pts_a[3], 0.05)
+        # create breps of top layer of sub-layer bricks
+        sub_layer_breps = []
+        for brick in sub_layer_bricks:
+            corner_pts_b = brick.move_brick_pts(self.pts()[4:])
+            sub_layer_breps.append(rg.Brep.CreateFromCornerPoints(corner_pts_b[0], corner_pts_b[1], corner_pts_b[2], corner_pts_b[3], 0.05))
+
+        intersection_vertices = []
+        for b in sub_layer_breps:
+            intersection_area = rs.IntersectBreps(brep_top, b, tolerance = None)
+            vertices = rs.PolylineVertices(intersection_area[0])
+            intersection_vertices.extend(vertices)
+
+        convex_hull = ghc.ConvexHull(intersection_vertices)[0]
+        if convex_hull.Contains(self.base_plane().Origin) == rg.PointContainment.Inside:
+            self.floating = True
+            return True
         else:
             return False
 
