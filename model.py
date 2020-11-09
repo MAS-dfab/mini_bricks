@@ -381,7 +381,6 @@ class Area():
         clusterd_edges = ghc.DelaunayEdges( clustered_pts )[1]
 
         for edge in clusterd_edges:
-            print(edge)
             edge_length = edge.Length
             if ( ( (bl-tol) < edge_length )  or                         #remove longer edges of the bricks and edges longer than bl
                  ( (bw-tol) < edge_length < (bw+tol) )  or              #remove shorter edges of the bricks 
@@ -391,7 +390,6 @@ class Area():
             else:
                 floating_edges.append( edge )
         return floating_edges
-
 
     def average_planes(self, lines):
         s_x = 0
@@ -536,8 +534,7 @@ class Area():
         brick_origins = [ b.origin().Origin for b in brickObjs ]
         tree = rg.RTree.CreateFromPointArray(brick_origins)
         self.RTree = tree
-        
-
+    
     def check_intersecting_bricks(self):
         """Checks if bricks in area are intersecting with each other or with bricks from previous area
 
