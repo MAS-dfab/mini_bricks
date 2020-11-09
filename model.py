@@ -572,9 +572,6 @@ class Area():
         if self.prev_neighbor:
             bricks_neigh = areas_dict[self.prev_neighbor].area_bricks
             # check if brick is inside extend area
-            # initiate number of intersections to zero for neighboring area bricks
-            for brick in bricks_neigh:
-                brick.n_intersections = 0
             for b1 in self.area_bricks:
                 for b2 in bricks_neigh:
                     if b1.brick_intersect_brick(b2) == True:
