@@ -923,18 +923,22 @@ class Brick(object):
             (bbox_a.Max.Y >= bbox_b.Min.Y)): #and (bbox_a.Min.Z < bbox_b.Max.Z) and (bbox_a.Max.Z > bbox_b.Min.Z):
 
             poly_a = self.create_PolyCurve_from_corners(corner_pts_a)
-            poly_a = poly_a.Offset(plane=rg.Plane.WorldXY, distance=offset_tolerance, tolerance=0.05, cornerStyle=rg.CurveOffsetCornerStyle.Sharp)
-            poly_a = poly_a[0]
-
             poly_b = self.create_PolyCurve_from_corners(corner_pts_b)
-            poly_b = poly_b.Offset(plane=rg.Plane.WorldXY, distance=offset_tolerance, tolerance=0.05, cornerStyle=rg.CurveOffsetCornerStyle.Sharp)
-            poly_b = poly_b[0]
+
+            if sub_layer == False:
+                # offset bricks to check for tolerance - only for same layer bricks
+                poly_a = poly_a.Offset(plane=rg.Plane.WorldXY, distance=offset_tolerance, tolerance=0.05, cornerStyle=rg.CurveOffsetCornerStyle.Sharp)
+                poly_a = poly_a[0]
+                poly_b = poly_b.Offset(plane=rg.Plane.WorldXY, distance=offset_tolerance, tolerance=0.05, cornerStyle=rg.CurveOffsetCornerStyle.Sharp)
+                poly_b = poly_b[0]
 
             # CI = rg.Intersect.Intersection.CurveCurve(poly_a, poly_b, 0.01, 0.01)
             # print(type( CI.Count) )
             
             # if CI.Count > 0:
-            cbi = rs.CurveBooleanIntersection(poly_a, poly_b, tolerance=0.5)
+            cbi = rs.CurveBooleanIntersection(poly_a, poly_b, tolerance=None)
+
+            print(len(cbi))
 
             if len(cbi) > 0:
                 return True
