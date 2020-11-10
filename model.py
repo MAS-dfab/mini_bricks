@@ -682,7 +682,6 @@ class Brick(object):
         self.n_intersections = 0
         self.floating = False
         self.supporting_bricks = []
-        self.polyCurve = None
 
 
     def dimensions(self):
@@ -914,7 +913,7 @@ class Brick(object):
             corner_pts_b = other_brick.move_brick_pts(other_brick.pts()[4:])
         else:
         # Get base layer corner points
-            corner_pts_b = other_brick.move_brick_pts(other_brick.pts()[4:])
+            corner_pts_b = other_brick.move_brick_pts(other_brick.pts()[:4])
 
         bbox_a = rg.BoundingBox(corner_pts_a)
         bbox_b = rg.BoundingBox(corner_pts_b)
@@ -924,7 +923,6 @@ class Brick(object):
             (bbox_a.Max.Y >= bbox_b.Min.Y)): #and (bbox_a.Min.Z < bbox_b.Max.Z) and (bbox_a.Max.Z > bbox_b.Min.Z):
 
             poly_a = self.create_PolyCurve_from_corners(corner_pts_a)
-            self.polyCurve = poly_a
             poly_b = self.create_PolyCurve_from_corners(corner_pts_b)
 
             if sub_layer == False:
