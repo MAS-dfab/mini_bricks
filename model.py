@@ -898,7 +898,15 @@ class Brick(object):
 
         return tran_brick_pts
 
-    def brick_intersect_brick(self, other_brick, sub_layer=False):
+    def create_PolyCurve_from_corners(self, corners):
+        poly = rg.PolyCurve()
+        poly.Append(rg.Line(corners[0], corners[1]))
+        poly.Append(rg.Line(corners[1], corners[2]))
+        poly.Append(rg.Line(corners[2], corners[3]))
+        poly.Append(rg.Line(corners[3], corners[0]))
+        return poly
+
+    def brick_intersect_brick(self, other_brick, sub_layer=False, offset_tolerance = 0.5):
         corner_pts_a = self.move_brick_pts(self.pts()[:4])
         if sub_layer == True:
         # Get top layer corner points
@@ -914,23 +922,19 @@ class Brick(object):
             (bbox_a.Min.Y <= bbox_b.Max.Y) and 
             (bbox_a.Max.Y >= bbox_b.Min.Y)): #and (bbox_a.Min.Z < bbox_b.Max.Z) and (bbox_a.Max.Z > bbox_b.Min.Z):
 
-            poly_a = rg.PolyCurve()
-            poly_a.Append(rg.Line(corner_pts_a[0], corner_pts_a[1]))
-            poly_a.Append(rg.Line(corner_pts_a[1], corner_pts_a[2]))
-            poly_a.Append(rg.Line(corner_pts_a[2], corner_pts_a[3]))
-            poly_a.Append(rg.Line(corner_pts_a[3], corner_pts_a[0]))
+            poly_a = self.create_PolyCurve_from_corners(corner_pts_a)
+            poly_a = poly_a.Offset(plane=rg.Plane.WorldXY, distance=offset_tolerance, tolerance=0.05, cornerStyle=rg.CurveOffsetCornerStyle.Sharp)
+            poly_a = poly_a[0]
 
-            poly_b = rg.PolyCurve()
-            poly_b.Append(rg.Line(corner_pts_b[0], corner_pts_b[1]))
-            poly_b.Append(rg.Line(corner_pts_b[1], corner_pts_b[2]))
-            poly_b.Append(rg.Line(corner_pts_b[2], corner_pts_b[3]))
-            poly_b.Append(rg.Line(corner_pts_b[3], corner_pts_b[0]))
+            poly_b = self.create_PolyCurve_from_corners(corner_pts_b)
+            poly_b = poly_b.Offset(plane=rg.Plane.WorldXY, distance=offset_tolerance, tolerance=0.05, cornerStyle=rg.CurveOffsetCornerStyle.Sharp)
+            poly_b = poly_b[0]
 
             # CI = rg.Intersect.Intersection.CurveCurve(poly_a, poly_b, 0.01, 0.01)
             # print(type( CI.Count) )
             
             # if CI.Count > 0:
-            cbi = rs.CurveBooleanIntersection(poly_a, poly_b, tolerance=0.005)
+            cbi = rs.CurveBooleanIntersection(poly_a, poly_b, tolerance=0.5)
 
             if len(cbi) > 0:
                 return True
@@ -939,26 +943,28 @@ class Brick(object):
         else:
             return False
 
-    def check_floating_brick(self, sub_layer_bricks):
+
+    def check_floating_brick(self, sub_layer_bricks, area_tolerance=5.0):
         # create flat breps from bricks
         # create brep from bottom layer of brick for top brick (self)
         corner_pts_a = self.move_brick_pts(self.pts()[:4])
-        brep_top = rg.Brep.CreateFromCornerPoints(corner_pts_a[0], corner_pts_a[1], corner_pts_a[2], corner_pts_a[3], 0.05)
+        poly_top = self.create_PolyCurve_from_corners(corner_pts_a)
         self.supporting_bricks = sub_layer_bricks
         # create breps of top layer of sub-layer bricks
-        sub_layer_breps = []
+        sub_layer_polys = []
         for brick in sub_layer_bricks:
             corner_pts_b = brick.move_brick_pts(self.pts()[4:])
-            sub_layer_breps.append(rg.Brep.CreateFromCornerPoints(corner_pts_b[0], corner_pts_b[1], corner_pts_b[2], corner_pts_b[3], 0.05))
+            sub_layer_polys.append(self.create_PolyCurve_from_corners(corner_pts_b))
 
         intersection_vertices = []
-        for b in sub_layer_breps:
-            intersection_area = rs.IntersectBreps(brep_top, b, tolerance = None)
-            try:
-                vertices = rs.PolylineVertices(intersection_area[0])
-                intersection_vertices.extend(vertices)
-            except:
-                continue
+        for b in sub_layer_polys:
+            intersection_area = rs.CurveBooleanIntersection(poly_top, b, tolerance=0.5)
+            if rs.CurveArea(intersection_area[0]) > area_tolerance:
+                try:
+                    vertices = rs.PolylineVertices(intersection_area [0])
+                    intersection_vertices.extend(vertices)
+                except:
+                    continue
 
         if len(intersection_vertices) < 3:
             self.floating = True
