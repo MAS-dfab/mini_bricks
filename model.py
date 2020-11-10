@@ -378,9 +378,17 @@ class Area():
         tol = 0.01                               # tolerance of range (if necessary)
         
         # create edges inside the picked up cluster
-        clusterd_edges = ghc.DelaunayEdges( clustered_pts )[1]
 
-        for edge in clusterd_edges:
+        clustered_edges = ghc.DelaunayEdges( clustered_pts )[1]
+        if clustered_edges is None:
+            clustered_edges = []
+            try:
+                for i, _ in range(len(clustered_pts)-1):
+                    clustered_edges.append(rg.Line(clustered_pts[i], clustered_pts[i+1]))
+            except:
+                return floating_edges
+
+        for edge in clustered_edges:
             edge_length = edge.Length
             if ( ( (bl-tol) < edge_length )  or                         #remove longer edges of the bricks and edges longer than bl
                  ( (bw-tol) < edge_length < (bw+tol) )  or              #remove shorter edges of the bricks 
@@ -597,8 +605,15 @@ class Area():
         pts_to_cluster_inside = self.find_points_in_extend(pts_to_cluster_all)
         input_data = [ [p.X, p.Y, p.Z] for p in pts_to_cluster_inside ]
         input_data = np.array(input_data, dtype=np.float16)
+        if len(input_data) == 0:
+            return None, None, None
+        elif self.initial_number_bricks > len(input_data):
+            # if n clusters is larger than the input data size, limit the number of clusters
+            k = len(input_data)
+        else:
+            k = self.initial_number_bricks
 
-        kmeans = sklearn.cluster.KMeans(n_clusters=self.initial_number_bricks, n_init=3, max_iter=50).fit(input_data)
+        kmeans = sklearn.cluster.KMeans(n_clusters=k, n_init=3, max_iter=50).fit(input_data)
 
         clusters = []
         points = []
@@ -629,15 +644,15 @@ class Area():
                 planes.append(plane)
         return planes
 
-    def find_floating_bricks(self):
+    def find_floating_bricks(self, delete=False):
         """This function will check for every brick inside the area if its floating
         """
         global areas_dict
         floating_bricks = []
-        convex_hulls = []
-        center_pts = []
+        #convex_hulls = []
+        #center_pts = []
         if self.layer == 0:
-            return floating_bricks, convex_hulls, center_pts
+            return floating_bricks #, convex_hulls, center_pts
         
         # first find the intersecting bricks from the bottom layer to check with
         all_sub_layer_bricks = []
@@ -652,13 +667,16 @@ class Area():
                     supporting_bricks.append(brick_bottom)
             
             # when we know the supporting bricks from the bottom layer for each brick of the top layer we can check if its floating
-            boolean, convex_hull, center = brick_top.check_floating_brick(supporting_bricks)
+            boolean = brick_top.check_floating_brick(supporting_bricks)
             if boolean == True:
                 floating_bricks.append(brick_top)
-                convex_hulls.append(convex_hull)
-                center_pts.append(center)
-        
-        return floating_bricks, convex_hulls, center_pts
+                #convex_hulls.append(convex_hull)
+                #center_pts.append(center)
+        if delete == True:
+            for float in floating_bricks:
+                self.area_bricks.remove(float)
+
+        return floating_bricks #, convex_hulls, center_pts
 
 
 class Brick(object):
@@ -974,13 +992,13 @@ class Brick(object):
 
         if len(intersection_vertices) < 3:
             self.floating = True
-            return True, None, self.base_plane().Origin
+            return True #, None, self.base_plane().Origin
         convex_hull = ghc.ConvexHull(intersection_vertices)[0]
         if convex_hull.Contains(self.base_plane().Origin) == rg.PointContainment.Outside:
             self.floating = True
-            return True, convex_hull, self.base_plane().Origin
+            return True #, convex_hull, self.base_plane().Origin
         else:
-            return False, convex_hull, self.base_plane().Origin
+            return False #, convex_hull, self.base_plane().Origin
 
 
 class Wall():
