@@ -191,3 +191,6 @@ def set_digital_out(id, signal):
     # Format UR script
     script = "set_digital_out(%s,%s)\n"%(id,signal)
     return script
+
+def UR_log(message):
+    return 'textmsg(\"{}\")\n'.format(message)  
