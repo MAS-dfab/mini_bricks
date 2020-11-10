@@ -930,7 +930,7 @@ class Brick(object):
             # print(type( CI.Count) )
             
             # if CI.Count > 0:
-            cbi = rs.CurveBooleanIntersection(poly_a, poly_b, tolerance=None)
+            cbi = rs.CurveBooleanIntersection(poly_a, poly_b, tolerance=0.005)
 
             if len(cbi) > 0:
                 return True
