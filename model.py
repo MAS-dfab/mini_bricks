@@ -958,8 +958,12 @@ class Brick(object):
 
         intersection_vertices = []
         for b in sub_layer_polys:
-            intersection_area = rs.CurveBooleanIntersection(poly_top, b, tolerance=0.5)
-            if rs.CurveArea(intersection_area[0]) > area_tolerance:
+            intersection_area = rs.CurveBooleanIntersection(poly_top, b, tolerance=0.1)
+            try:
+                area_size = rs.CurveArea(intersection_area[0])
+            except:
+                continue
+            if area_size > area_tolerance:
                 try:
                     vertices = rs.PolylineVertices(intersection_area [0])
                     intersection_vertices.extend(vertices)
