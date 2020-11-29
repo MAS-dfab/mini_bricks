@@ -332,9 +332,9 @@ class Area():
         [Rhino Geometry Plane]
 
         """
-        params = rg.Curve.DivideByCount(self.centerline, 2, True)
-        center_point = rg.Curve.PointAt(self.centerline, params[1])
-        tan = rg.Curve.TangentAt(self.centerline, params[1])
+        params = rg.Curve.DivideByCount(self.centerline(), 2, True)
+        center_point = rg.Curve.PointAt(self.centerline(), params[1])
+        tan = rg.Curve.TangentAt(self.centerline(), params[1])
         vec1 = rg.Vector3d.CrossProduct(tan, rg.Vector3d.ZAxis)
         vec2 = rg.Vector3d.CrossProduct(vec1, rg.Vector3d.ZAxis)
         plane = rg.Plane(center_point, vec1, vec2)
@@ -382,10 +382,13 @@ class Area():
         clustered_edges = ghc.DelaunayEdges( clustered_pts )[1]
         if clustered_edges is None:
             clustered_edges = []
+            # for i in range(len(clustered_pts)-1):
+            #         clustered_edges.append(rg.Line(clustered_pts[i], clustered_pts[i+1]))
             try:
-                for i, _ in range(len(clustered_pts)-1):
+                for i in range(len(clustered_pts)-1):
                     clustered_edges.append(rg.Line(clustered_pts[i], clustered_pts[i+1]))
             except:
+                print('AREA: {} -- clustering failed in except statement in floating_edges(), number of clustered points = {}'.format(self.area_key, len(clustered_pts)))
                 return floating_edges
 
         for edge in clustered_edges:
@@ -470,7 +473,8 @@ class Area():
     def get_bricks_vertices(self):
         vertices = []
         for brick in self.area_bricks:
-            vertices.extend(brick.pts_before_clustering())
+            if brick.floating is False:
+                vertices.extend(brick.pts_before_clustering())
         return vertices
 
     def find_points_in_extend(self, point_list):
@@ -602,10 +606,13 @@ class Area():
         for area in self.sub_layer_neighbors:
             pts_to_cluster_all.extend(areas_dict[area].get_bricks_vertices())
         
+        
         pts_to_cluster_inside = self.find_points_in_extend(pts_to_cluster_all)
+        print('AREA: ', self.area_key, ' points to cluster: ',len(pts_to_cluster_inside), 'number bricks below: ', len(areas_dict[self.sub_layer_neighbors[0]].area_bricks))
         input_data = [ [p.X, p.Y, p.Z] for p in pts_to_cluster_inside ]
         input_data = np.array(input_data, dtype=np.float16)
         if len(input_data) == 0:
+            print('length input is 0 for clustering in def cluster_sub_layer_points()')
             return None, None, None
         elif self.initial_number_bricks > len(input_data):
             # if n clusters is larger than the input data size, limit the number of clusters
@@ -613,7 +620,7 @@ class Area():
         else:
             k = self.initial_number_bricks
 
-        kmeans = sklearn.cluster.KMeans(n_clusters=k, n_init=3, max_iter=50).fit(input_data)
+        kmeans = sklearn.cluster.KMeans(n_clusters=k, n_init=20, max_iter=200).fit(input_data)
 
         clusters = []
         points = []
@@ -628,7 +635,44 @@ class Area():
         
         return clusters, points, labels
 
-    
+    def rotate_bricks(self, intersection_pairs):
+        t = self.tangent_origin() 
+        direction_x, direction_y = t.XAxis, t.YAxis
+        for pair in intersection_pairs:
+            pair[0].plane.XAxis, pair[0].plane.YAxis = direction_y, direction_x
+            # if self.layer > 3:
+            #     pair[1].plane.XAxis, pair[1].plane.YAxis = direction_y, direction_x
+
+    def tangent_param(self, param):
+        """returns the tangent at the origin plane of the area:
+
+        Returns
+        ----------
+        [Rhino Geometry Plane]
+
+        """
+        tan = rg.Curve.TangentAt(self.initial_curve, param)
+        center_point = rg.Curve.PointAt(self.initial_curve, param)
+        vec1 = rg.Vector3d.CrossProduct(tan, rg.Vector3d.ZAxis)
+        vec2 = rg.Vector3d.CrossProduct(vec1, rg.Vector3d.ZAxis)
+        plane = rg.Plane(center_point, vec1, vec2)
+
+        return plane
+
+    def last_layer_rotate_bricks(self):
+        t = self.tangent_origin() 
+        direction_x, direction_y = t.XAxis, t.YAxis
+        for brick in self.area_bricks:
+            brick_center = brick.plane.Origin
+            param = self.initial_curve.ClosestPoint(brick_center)
+            if param[0] is True:
+                param = param[1]
+                t = self.tangent_param(param)
+                direction_x, direction_y = t.XAxis, t.YAxis
+            brick.plane.XAxis, brick.plane.YAxis = direction_y, direction_x
+
+
+
     def random_brick_planes(self, points):
         planes = []
         self.points = points
